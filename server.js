@@ -25,31 +25,40 @@ const server = http.createServer((req, res) => {
 
     fs.writeFileSync(javaFile, javaCode);
 
-    // Compile
+    // Compile Java
     exec(
-        `javac ${javaFile}`,
-        { timeout: 5000 },
+        "javac Main.java",
+        {
+            cwd: EXEC_DIR,
+            timeout: 5000
+        },
         (compileError, compileStdout, compileStderr) => {
 
-            const classFile = path.join(EXEC_DIR, "Main.class");
-
-            if (!fs.existsSync(classFile)) {
+            if (compileError) {
                 return res.end(`
-                    <h1>Compilation Failed ❌</h1>
-                    <pre>${compileStderr || compileError?.message}</pre>
+                    <h1>Compilation Error ❌</h1>
+                    <pre>${compileStderr || compileError.message}</pre>
                 `);
             }
 
-            // Run
+            // Run Java
             exec(
-                `java -cp ${EXEC_DIR} Main`,
-                { timeout: 5000 },
+                "java Main",
+                {
+                    cwd: EXEC_DIR,
+                    timeout: 5000
+                },
                 (runError, runStdout, runStderr) => {
 
                     if (runError) {
                         return res.end(`
                             <h1>Runtime Error ❌</h1>
-                            <pre>${runStderr || runError.message}</pre>
+
+                            <h2>Error:</h2>
+                            <pre>${runError.message}</pre>
+
+                            <h2>STDERR:</h2>
+                            <pre>${runStderr}</pre>
                         `);
                     }
 
