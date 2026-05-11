@@ -16,49 +16,47 @@ const server = http.createServer((req, res) => {
 
     fs.writeFileSync("Main.java", javaCode);
 
-    // STEP 1: Compile
-    exec("javac Main.java", { timeout: 5000 }, (compileError, compileStdout, compileStderr) => {
+    exec(
+        "which java && which javac && java -version && javac -version",
+        (checkError, checkStdout, checkStderr) => {
 
-        if (compileError) {
-            res.writeHead(200, { "Content-Type": "text/html" });
+            exec(
+                "javac Main.java",
+                { timeout: 5000 },
+                (compileError, compileStdout, compileStderr) => {
 
-            return res.end(`
-                <h1>Compilation Error ❌</h1>
+                    exec(
+                        "ls",
+                        (lsError, lsStdout) => {
 
-                <h2>Error:</h2>
-                <pre>${compileError.message}</pre>
+                            res.writeHead(200, {
+                                "Content-Type": "text/html"
+                            });
 
-                <h2>STDERR:</h2>
-                <pre>${compileStderr}</pre>
-            `);
+                            res.end(`
+                                <h1>Java Debug</h1>
+
+                                <h2>Java Paths:</h2>
+                                <pre>${checkStdout}</pre>
+
+                                <h2>Java STDERR:</h2>
+                                <pre>${checkStderr}</pre>
+
+                                <h2>Files:</h2>
+                                <pre>${lsStdout}</pre>
+
+                                <h2>Compile Error:</h2>
+                                <pre>${compileError ? compileError.message : "No Error"}</pre>
+
+                                <h2>Compile STDERR:</h2>
+                                <pre>${compileStderr}</pre>
+                            `);
+                        }
+                    );
+                }
+            );
         }
-
-        // STEP 2: Run
-        exec("java Main", { timeout: 5000 }, (runError, runStdout, runStderr) => {
-
-            res.writeHead(200, { "Content-Type": "text/html" });
-
-            if (runError) {
-                return res.end(`
-                    <h1>Runtime Error ❌</h1>
-
-                    <h2>Error:</h2>
-                    <pre>${runError.message}</pre>
-
-                    <h2>STDERR:</h2>
-                    <pre>${runStderr}</pre>
-                `);
-            }
-
-            res.end(`
-                <h1>Java Compilation Success ✅</h1>
-
-                <h2>Output:</h2>
-
-                <pre>${runStdout}</pre>
-            `);
-        });
-    });
+    );
 });
 
 server.listen(PORT, () => {
