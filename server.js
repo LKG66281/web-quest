@@ -14,10 +14,12 @@ public class Main {
 
 const server = http.createServer((req, res) => {
 
+    // Create Java file
     fs.writeFileSync("Main.java", javaCode);
 
+    // Compile and run Java
     exec(
-        "pwd && ls && javac Main.java && java Main",
+        "javac Main.java && java -cp . Main",
         { timeout: 5000 },
         (error, stdout, stderr) => {
 
@@ -25,17 +27,32 @@ const server = http.createServer((req, res) => {
                 "Content-Type": "text/html"
             });
 
+            // Execution error
+            if (error) {
+                return res.end(`
+                    <h1>Compilation/Execution Error ❌</h1>
+                    <pre>${error.message}</pre>
+
+                    <h2>STDERR:</h2>
+                    <pre>${stderr}</pre>
+                `);
+            }
+
+            // Java stderr
+            if (stderr) {
+                return res.end(`
+                    <h1>Java Error ❌</h1>
+                    <pre>${stderr}</pre>
+                `);
+            }
+
+            // Success
             res.end(`
-                <h1>Debug Output</h1>
+                <h1>Java Compilation Success ✅</h1>
 
-                <h2>STDOUT:</h2>
+                <h2>Output:</h2>
+
                 <pre>${stdout}</pre>
-
-                <h2>STDERR:</h2>
-                <pre>${stderr}</pre>
-
-                <h2>ERROR:</h2>
-                <pre>${error ? error.message : "No Error"}</pre>
             `);
         }
     );
