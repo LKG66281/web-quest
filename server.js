@@ -14,48 +14,51 @@ public class Main {
 
 const server = http.createServer((req, res) => {
 
-    // Create Java file
     fs.writeFileSync("Main.java", javaCode);
 
-    // Compile and run Java
-    exec(
-        "javac Main.java && java -cp . Main",
-        { timeout: 5000 },
-        (error, stdout, stderr) => {
+    // STEP 1: Compile
+    exec("javac Main.java", { timeout: 5000 }, (compileError, compileStdout, compileStderr) => {
 
-            res.writeHead(200, {
-                "Content-Type": "text/html"
-            });
+        if (compileError) {
+            res.writeHead(200, { "Content-Type": "text/html" });
 
-            // Execution error
-            if (error) {
+            return res.end(`
+                <h1>Compilation Error ❌</h1>
+
+                <h2>Error:</h2>
+                <pre>${compileError.message}</pre>
+
+                <h2>STDERR:</h2>
+                <pre>${compileStderr}</pre>
+            `);
+        }
+
+        // STEP 2: Run
+        exec("java Main", { timeout: 5000 }, (runError, runStdout, runStderr) => {
+
+            res.writeHead(200, { "Content-Type": "text/html" });
+
+            if (runError) {
                 return res.end(`
-                    <h1>Compilation/Execution Error ❌</h1>
-                    <pre>${error.message}</pre>
+                    <h1>Runtime Error ❌</h1>
+
+                    <h2>Error:</h2>
+                    <pre>${runError.message}</pre>
 
                     <h2>STDERR:</h2>
-                    <pre>${stderr}</pre>
+                    <pre>${runStderr}</pre>
                 `);
             }
 
-            // Java stderr
-            if (stderr) {
-                return res.end(`
-                    <h1>Java Error ❌</h1>
-                    <pre>${stderr}</pre>
-                `);
-            }
-
-            // Success
             res.end(`
                 <h1>Java Compilation Success ✅</h1>
 
                 <h2>Output:</h2>
 
-                <pre>${stdout}</pre>
+                <pre>${runStdout}</pre>
             `);
-        }
-    );
+        });
+    });
 });
 
 server.listen(PORT, () => {
