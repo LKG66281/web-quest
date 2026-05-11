@@ -17,7 +17,7 @@ const server = http.createServer((req, res) => {
     fs.writeFileSync("Main.java", javaCode);
 
     exec(
-        "javac Main.java && java Main",
+        "pwd && ls && javac Main.java && java Main",
         { timeout: 5000 },
         (error, stdout, stderr) => {
 
@@ -25,24 +25,17 @@ const server = http.createServer((req, res) => {
                 "Content-Type": "text/html"
             });
 
-            if (error) {
-                return res.end(`
-                    <h1>Compilation/Execution Error ❌</h1>
-                    <pre>${error.message}</pre>
-                `);
-            }
-
-            if (stderr) {
-                return res.end(`
-                    <h1>Java Error ❌</h1>
-                    <pre>${stderr}</pre>
-                `);
-            }
-
             res.end(`
-                <h1>Java Compilation Success ✅</h1>
-                <h2>Output:</h2>
+                <h1>Debug Output</h1>
+
+                <h2>STDOUT:</h2>
                 <pre>${stdout}</pre>
+
+                <h2>STDERR:</h2>
+                <pre>${stderr}</pre>
+
+                <h2>ERROR:</h2>
+                <pre>${error ? error.message : "No Error"}</pre>
             `);
         }
     );
